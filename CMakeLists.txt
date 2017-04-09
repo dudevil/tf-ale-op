@@ -9,8 +9,10 @@ execute_process(
   OUTPUT_VARIABLE TF_INCLUDE
   )
 message(STATUS TF_INCLUDES:  ${TF_INCLUDE})
-set(ALE_INCLUDE_DIR "../Arcade-Learning-Environment/src" CACHE PATH "ALE headers")
-set(ALE_LIBRARY_DIR "../Arcade-Learning-Environment" CACHE PATH "ALE shared library")
+set(ALE_INCLUDE_DIR ${CMAKE_SOURCE_DIR}/../Arcade-Learning-Environment/src CACHE PATH "ALE headers")
+set(ALE_LIBRARY_DIR ${CMAKE_SOURCE_DIR}/../Arcade-Learning-Environment CACHE PATH "ALE shared library")
+set(ROM_PATH ${CMAKE_SOURCE_DIR}/roms CACHE PATH "Path to Atari rom files")
+add_definitions(-DROM_PATH="${ROM_PATH}/")
 
 include_directories(${TF_INCLUDE})
 include_directories(${ALE_INCLUDE_DIR})

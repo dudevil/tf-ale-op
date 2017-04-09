@@ -34,7 +34,7 @@ class AleOp : public OpKernel {
   explicit AleOp(OpKernelConstruction* context) : OpKernel(context) {
     OP_REQUIRES_OK(context,
                    context->GetAttr("rom_file", &rom_file_));
-    ale_.loadROM(rom_file_);
+    ale_.loadROM(ROM_PATH + rom_file_);
     OP_REQUIRES_OK(context,
                    context->GetAttr("frameskip_min", &frameskip_min_));
     OP_REQUIRES_OK(context,
