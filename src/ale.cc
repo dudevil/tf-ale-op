@@ -6,6 +6,7 @@
 #include "tensorflow/core/framework/shape_inference.h"
 #include "tensorflow/core/framework/tensor_shape.h"
 #include "tensorflow/core/platform/default/logging.h"
+#include "tensorflow/core/platform/env.h"
 #include "tensorflow/core/lib/random/simple_philox.h"
 #include "tensorflow/core/util/guarded_philox_random.h"
 
@@ -34,7 +35,11 @@ class AleOp : public OpKernel {
   explicit AleOp(OpKernelConstruction* context) : OpKernel(context) {
     OP_REQUIRES_OK(context,
                    context->GetAttr("rom_file", &rom_file_));
-    ale_.loadROM(ROM_PATH + rom_file_);
+    auto full_rom_path_ = ROM_PATH + rom_file_;
+    OP_REQUIRES_OK(context,
+		   Env::Default()->FileExists(full_rom_path_));
+
+    ale_.loadROM(full_rom_path_);
     OP_REQUIRES_OK(context,
                    context->GetAttr("frameskip_min", &frameskip_min_));
     OP_REQUIRES_OK(context,
