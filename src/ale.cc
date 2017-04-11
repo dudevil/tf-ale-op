@@ -22,6 +22,7 @@ REGISTER_OP("Ale")
     .Output("reward: float")
     .Output("done: bool")
     .Output("screen: uint8")
+    .SetIsStateful()
     .SetShapeFn([](::tensorflow::shape_inference::InferenceContext* c) {
       c->set_output(0, c->Scalar());
       c->set_output(1, c->Scalar());
