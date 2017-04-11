@@ -2,11 +2,12 @@
 
 ## Build instructions
 - Install Tensorflow
+- pip install Pillow
 - Download and compile the [Arcade-Learning-Environment](https://github.com/mgbellemare/Arcade-Learning-Environment)
 - Download and save the Atari rom files
 - Clone this repository
 - `mkdir build && cd build`
-- `cmake .. -DALE_INCLUDE_DIR=ALE_PATH/src/ -DALE_LIBRARY_DIR=ALE_PATH -DROM_PATH=PATH_TO_ROM_FILES`
+- `cmake ../.. -DALE_INCLUDE_DIR=ALE_PATH/src/ -DALE_LIBRARY_DIR=ALE_PATH -DROM_PATH=PATH_TO_ROM_FILES`
 - `make`
 
 The build should produce the `libaleop.so` file.
