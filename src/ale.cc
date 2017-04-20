@@ -26,7 +26,7 @@ REGISTER_OP("Ale")
     .SetShapeFn([](::tensorflow::shape_inference::InferenceContext* c) {
       c->set_output(0, c->Scalar());
       c->set_output(1, c->Scalar());
-      // c->set_output(2, c->MakeShape(ale.getScreen().height(), ale.getScreen().width(), 3));
+      //      c->set_output(2, c->MakeShape({210, 160, 3}));
       return Status::OK();
     });
 
@@ -87,20 +87,21 @@ class AleOp : public OpKernel {
     Tensor* done_tensor = NULL;
     Tensor* screen_tensor = NULL;
 
-    OP_REQUIRES_OK(context, context->allocate_output(0, TensorShape(),
+    OP_REQUIRES_OK(context, context->allocate_output(0, TensorShape({}),
                                                      &reward_tensor));
-    OP_REQUIRES_OK(context, context->allocate_output(1, TensorShape(),
+    OP_REQUIRES_OK(context, context->allocate_output(1, TensorShape({}),
 						     &done_tensor));
-    OP_REQUIRES_OK(context, context->allocate_output(2, {h, w, 3},
+    OP_REQUIRES_OK(context, context->allocate_output(2, TensorShape({h, w, 3}),
 						     &screen_tensor));
 
     auto output_r = reward_tensor->scalar<float>();
     auto output_d = done_tensor->scalar<float>();
     auto output_s = screen_tensor->flat<unsigned char>();
-    
+
+    // LOG(INFO) << "screen size: " << screen_buff.size();
     output_r(0) = r;
     output_d(0) = done;
-    std::copy_n(screen_buff.begin(), screen_buff.size(),
+    std::copy_n(screen_buff.begin(), h * w * 3,
 		output_s.data()); // get rid of copy?
   }
 
