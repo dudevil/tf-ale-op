@@ -1,4 +1,4 @@
-#include <ale_interface.hpp>
+#include <ale/ale_interface.hpp>
 #include "tensorflow/core/framework/op.h"
 #include "tensorflow/core/platform/env.h"
 #include "tensorflow/core/framework/op_kernel.h"
@@ -26,7 +26,23 @@ REGISTER_OP("Ale")
       c->set_output(1, c->Scalar());
       // no shape inference for screen, because we don't know screen dimensions yet
       return Status::OK();
-    });
+    })
+    .Doc(R"doc(
+Executes an action in against the ALE emulator.
+
+The action is repeated a uniformly random
+number of times between frameskip_min and frameskip_max, the rewards are accumulated and
+only the last ALE screen is returned.
+
+rom_file: ROM filename
+frameskip_min: Minimum number of frames to skip.
+frameskip_max: Maximum number of frames to skip.
+seed: Seed used for peudo-random number generator.
+seed2: Same as seed.
+reward: Sum of rewads received after repeating action.
+done: `True` if the episode terminated.
+screen: RGB ALE screen.
+)doc");
 
 
 class AleOp : public OpKernel {
@@ -34,11 +50,10 @@ class AleOp : public OpKernel {
   explicit AleOp(OpKernelConstruction* context) : OpKernel(context) {
     OP_REQUIRES_OK(context,
                    context->GetAttr("rom_file", &rom_file_));
-    auto full_rom_path_ = ROM_PATH + rom_file_;
     OP_REQUIRES_OK(context,
-		   Env::Default()->FileExists(full_rom_path_));
+		   Env::Default()->FileExists(rom_file_));
 
-    ale_.loadROM(full_rom_path_);
+    ale_.loadROM(rom_file_);
     OP_REQUIRES_OK(context,
                    context->GetAttr("frameskip_min", &frameskip_min_));
     OP_REQUIRES_OK(context,
@@ -81,7 +96,7 @@ class AleOp : public OpKernel {
     if(done) {
       ale_.reset_game();
     }
-    
+
     Tensor* reward_tensor = NULL;
     Tensor* done_tensor = NULL;
     Tensor* screen_tensor = NULL;
