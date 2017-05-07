@@ -8,7 +8,9 @@ It accepts a single scalar tensor as action and returns a reward, end-of-episode
 - install [TensorFlow](https://www.tensorflow.org/install/)
 - clone the [Arcade-Learning-Environment](https://github.com/mgbellemare/Arcade-Learning-Environment) repository
 - compile and install ALE:
+
 ```bash
+sudo apt-get install libsdl1.2-dev libsdl-gfx1.2-dev libsdl-image1.2-dev cmake
 cd Arcade-Learning-Environment
 mkdir build && cd build
 ```
