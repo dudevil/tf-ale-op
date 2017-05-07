@@ -28,7 +28,7 @@ make -j && make install
 - clone this repository
 - `python setup.py install`
 
-## Basic sage example
+## Basic usage example
 
 ```python
 
