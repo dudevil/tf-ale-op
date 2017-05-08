@@ -1,13 +1,11 @@
-#include <ale_interface.hpp>
-
+#include <ale/ale_interface.hpp>
 #include "tensorflow/core/framework/op.h"
-#include "tensorflow/core/framework/op_kernel.h"
-#include "tensorflow/core/framework/register_types.h"
-#include "tensorflow/core/framework/shape_inference.h"
-#include "tensorflow/core/framework/tensor_shape.h"
-#include "tensorflow/core/platform/default/logging.h"
 #include "tensorflow/core/platform/env.h"
+#include "tensorflow/core/framework/op_kernel.h"
+#include "tensorflow/core/framework/tensor_shape.h"
+#include "tensorflow/core/framework/register_types.h"
 #include "tensorflow/core/lib/random/simple_philox.h"
+#include "tensorflow/core/framework/shape_inference.h"
 #include "tensorflow/core/util/guarded_philox_random.h"
 
 using namespace tensorflow;
@@ -26,9 +24,25 @@ REGISTER_OP("Ale")
     .SetShapeFn([](::tensorflow::shape_inference::InferenceContext* c) {
       c->set_output(0, c->Scalar());
       c->set_output(1, c->Scalar());
-      //      c->set_output(2, c->MakeShape({210, 160, 3}));
+      // no shape inference for screen, because we don't know screen dimensions yet
       return Status::OK();
-    });
+    })
+    .Doc(R"doc(
+Executes an action in against the ALE emulator.
+
+The action is repeated a uniformly random
+number of times between frameskip_min and frameskip_max, the rewards are accumulated and
+only the last ALE screen is returned.
+
+rom_file: ROM filename
+frameskip_min: Minimum number of frames to skip.
+frameskip_max: Maximum number of frames to skip.
+seed: Seed used for peudo-random number generator.
+seed2: Same as seed.
+reward: Sum of rewads received after repeating action.
+done: `True` if the episode terminated.
+screen: RGB ALE screen.
+)doc");
 
 
 class AleOp : public OpKernel {
@@ -36,11 +50,10 @@ class AleOp : public OpKernel {
   explicit AleOp(OpKernelConstruction* context) : OpKernel(context) {
     OP_REQUIRES_OK(context,
                    context->GetAttr("rom_file", &rom_file_));
-    auto full_rom_path_ = ROM_PATH + rom_file_;
     OP_REQUIRES_OK(context,
-		   Env::Default()->FileExists(full_rom_path_));
+		   Env::Default()->FileExists(rom_file_));
 
-    ale_.loadROM(full_rom_path_);
+    ale_.loadROM(rom_file_);
     OP_REQUIRES_OK(context,
                    context->GetAttr("frameskip_min", &frameskip_min_));
     OP_REQUIRES_OK(context,
@@ -64,25 +77,26 @@ class AleOp : public OpKernel {
     OP_REQUIRES(context, legalActions_.find(action) != legalActions_.end(),
                 errors::InvalidArgument("Action is out of legal actions range."));
 
-    auto w = ale_.getScreen().width();
-    auto h = ale_.getScreen().height();
+    const int w = ale_.getScreen().width();
+    const int h = ale_.getScreen().height();
     std::vector<unsigned char> screen_buff;
-    screen_buff.reserve(w * h * 3);
 
     auto local_gen = generator_.ReserveSamples32(1);
     random::SimplePhilox random(&local_gen);
-    auto to_repeat = frameskip_min_ + random.Uniform(frameskip_max_ - frameskip_min_);
+    int to_repeat = frameskip_min_ + random.Uniform(frameskip_max_ - frameskip_min_);
 
     float r = 0.0;
     for(;to_repeat > 0; --to_repeat){
       r += ale_.act(action);
     }
 
-    auto done = ale_.game_over();
+    bool done = ale_.game_over();
     ale_.getScreenRGB(screen_buff);
 
-    if(done) ale_.reset_game();
-    
+    if(done) {
+      ale_.reset_game();
+    }
+
     Tensor* reward_tensor = NULL;
     Tensor* done_tensor = NULL;
     Tensor* screen_tensor = NULL;
@@ -98,7 +112,6 @@ class AleOp : public OpKernel {
     auto output_d = done_tensor->scalar<float>();
     auto output_s = screen_tensor->flat<unsigned char>();
 
-    // LOG(INFO) << "screen size: " << screen_buff.size();
     output_r(0) = r;
     output_d(0) = done;
     std::copy_n(screen_buff.begin(), h * w * 3,
