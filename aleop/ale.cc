@@ -109,7 +109,7 @@ class AleOp : public OpKernel {
 						     &screen_tensor));
 
     auto output_r = reward_tensor->scalar<float>();
-    auto output_d = done_tensor->scalar<float>();
+    auto output_d = done_tensor->scalar<bool>();
     auto output_s = screen_tensor->flat<unsigned char>();
 
     output_r(0) = r;
