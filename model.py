@@ -28,6 +28,7 @@ class FFPolicy(object):
 
     def __init__(self, observation, action_space):
         # self.x = x = tf.placeholder(tf.float32, [None] + list(ob_space))
+        self.action_space = action_space
         self.x = x = observation
         for i in range(4):
             x = tf.contrib.layers.conv2d(x,
@@ -56,8 +57,7 @@ class FFPolicy(object):
         self.var_list = tf.get_collection(tf.GraphKeys.TRAINABLE_VARIABLES, tf.get_variable_scope().name)
 
     def act(self):
-        return self.sample, self.vf
+        return self.sample, self.vf[0]
     
     def value(self):
-        sess = tf.get_default_session()
-        return sess.run(self.vf)[0]
+        return self.vf[0]
